@@ -1,6 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import dynamic from "next/dynamic";
+import type ReactPlayerType from "react-player";
+
+const ReactPlayer = dynamic(() => import("react-player"), {
+  ssr: false,
+}) as typeof ReactPlayerType;
 
 interface Photo {
   key: string;
@@ -73,12 +79,24 @@ export function PhotoList({ refreshTrigger = 0, cols = 3 }: PhotoListProps) {
             key={photo.key}
             className="aspect-square overflow-hidden rounded-lg bg-muted"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={photo.url}
-              alt={photo.key.split("/").pop() ?? "photo"}
-              className="h-full w-full object-cover"
-            />
+            {/\.(mp4|mov|webm|avi)$/i.test(photo.key) ? (
+              <ReactPlayer
+                src={photo.url}
+                width="100%"
+                height="100%"
+                muted
+                loop
+                playsInline
+                controls
+              />
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={photo.url}
+                alt={photo.key.split("/").pop() ?? "photo"}
+                className="h-full w-full object-cover"
+              />
+            )}
           </div>
         ))}
       </div>

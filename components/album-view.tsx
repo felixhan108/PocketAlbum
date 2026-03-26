@@ -7,7 +7,7 @@ import { Option } from "./option";
 
 export function AlbumView() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [cols, setCols] = useState<1 | 2 | 3>(3);
+  const [cols, setCols] = useState<1 | 2 | 3>(1);
 
   return (
     <>
