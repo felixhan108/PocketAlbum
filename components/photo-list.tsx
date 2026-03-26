@@ -1,15 +1,34 @@
+import { ListObjectsV2Command } from "@aws-sdk/client-s3";
+import { r2 } from "@/lib/r2";
+import { getDownloadUrl } from "@/lib/presigned";
+
+const BUCKET = process.env.R2_BUCKET_NAME!;
+
 interface Photo {
   key: string;
   url: string;
-  lastModified?: string;
+  lastModified?: Date;
 }
 
 async function getPhotos(): Promise<Photo[]> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
-  const res = await fetch(`${baseUrl}/api/photos`, { cache: "no-store" });
-  if (!res.ok) return [];
-  const { photos } = await res.json();
-  return photos;
+  const result = await r2.send(
+    new ListObjectsV2Command({ Bucket: BUCKET, Prefix: "photos/" })
+  );
+
+  const objects = result.Contents ?? [];
+  const photos = await Promise.all(
+    objects
+      .filter((obj) => obj.Key)
+      .map(async (obj) => ({
+        key: obj.Key!,
+        url: await getDownloadUrl(obj.Key!),
+        lastModified: obj.LastModified,
+      }))
+  );
+
+  return photos.sort(
+    (a, b) => (b.lastModified?.getTime() ?? 0) - (a.lastModified?.getTime() ?? 0)
+  );
 }
 
 export async function PhotoList() {
