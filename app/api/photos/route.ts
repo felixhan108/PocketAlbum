@@ -4,10 +4,16 @@ import { getDownloadUrl } from "@/lib/presigned";
 
 const BUCKET = process.env.R2_BUCKET_NAME!;
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const cursor = searchParams.get("cursor") ?? undefined;
+  const limit = Number(searchParams.get("limit") ?? 30);
+
   const command = new ListObjectsV2Command({
     Bucket: BUCKET,
     Prefix: "photos/",
+    MaxKeys: limit,
+    ContinuationToken: cursor,
   });
 
   const result = await r2.send(command);
@@ -31,5 +37,5 @@ export async function GET() {
   // 최신순 정렬
   photos.sort((a, b) => getTakenAt(b.key) - getTakenAt(a.key));
 
-  return Response.json({ photos });
+  return Response.json({ photos, nextCursor: result.NextContinuationToken ?? null });
 }
