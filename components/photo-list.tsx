@@ -11,24 +11,30 @@ interface Photo {
 }
 
 async function getPhotos(): Promise<Photo[]> {
-  const result = await r2.send(
-    new ListObjectsV2Command({ Bucket: BUCKET, Prefix: "photos/" })
-  );
+  try {
+    const result = await r2.send(
+      new ListObjectsV2Command({ Bucket: BUCKET, Prefix: "photos/" }),
+    );
 
-  const objects = result.Contents ?? [];
-  const photos = await Promise.all(
-    objects
-      .filter((obj) => obj.Key)
-      .map(async (obj) => ({
-        key: obj.Key!,
-        url: await getDownloadUrl(obj.Key!),
-        lastModified: obj.LastModified,
-      }))
-  );
+    const objects = result.Contents ?? [];
+    const photos = await Promise.all(
+      objects
+        .filter((obj) => obj.Key)
+        .map(async (obj) => ({
+          key: obj.Key!,
+          url: await getDownloadUrl(obj.Key!),
+          lastModified: obj.LastModified,
+        })),
+    );
 
-  return photos.sort(
-    (a, b) => (b.lastModified?.getTime() ?? 0) - (a.lastModified?.getTime() ?? 0)
-  );
+    return photos.sort(
+      (a, b) =>
+        (b.lastModified?.getTime() ?? 0) - (a.lastModified?.getTime() ?? 0),
+    );
+  } catch (err) {
+    console.error("[PhotoList] R2 fetch error:", err);
+    return [];
+  }
 }
 
 export async function PhotoList() {
