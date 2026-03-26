@@ -22,7 +22,11 @@ export function UploadButton({ onUploadComplete }: UploadButtonProps) {
       const res = await fetch("/api/upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filename: file.name, contentType: file.type }),
+        body: JSON.stringify({
+          filename: file.name,
+          contentType: file.type,
+          takenAt: new Date(file.lastModified).toISOString(),
+        }),
       });
 
       if (!res.ok) throw new Error("Failed to get upload URL");
@@ -52,16 +56,13 @@ export function UploadButton({ onUploadComplete }: UploadButtonProps) {
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept="image/*,video/*"
         className="hidden"
         onChange={handleFileChange}
       />
-      <Button
-        onClick={() => inputRef.current?.click()}
-        disabled={uploading}
-      >
+      <Button onClick={() => inputRef.current?.click()} disabled={uploading}>
         <Upload />
-        {uploading ? "업로드 중..." : "사진 업로드"}
+        {uploading ? "업로드 중..." : "올리기"}
       </Button>
     </>
   );

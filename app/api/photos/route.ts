@@ -20,13 +20,16 @@ export async function GET() {
         key: obj.Key!,
         url: await getDownloadUrl(obj.Key!),
         lastModified: obj.LastModified,
-      }))
+      })),
   );
 
+  function getTakenAt(key: string): number {
+    const filename = key.split("/")[1]; // "1771893928804-1771893928900-IMG_0001.jpg"
+    return parseInt(filename.split("-")[0]);
+  }
+
   // 최신순 정렬
-  photos.sort((a, b) =>
-    (b.lastModified?.getTime() ?? 0) - (a.lastModified?.getTime() ?? 0)
-  );
+  photos.sort((a, b) => getTakenAt(b.key) - getTakenAt(a.key));
 
   return Response.json({ photos });
 }
