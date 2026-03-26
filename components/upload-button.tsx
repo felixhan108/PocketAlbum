@@ -25,7 +25,7 @@ export function UploadButton({ onUploadComplete }: UploadButtonProps) {
         body: JSON.stringify({
           filename: file.name,
           contentType: file.type,
-          takenAt: new Date(file.lastModified).toISOString(),
+          takenAt: file.lastModified,
         }),
       });
 
