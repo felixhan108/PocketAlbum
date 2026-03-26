@@ -88,6 +88,7 @@ export function PhotoList({ refreshTrigger = 0, cols = 3 }: PhotoListProps) {
                 loop
                 playsInline
                 controls
+                preload="metadata"
               />
             ) : (
               // eslint-disable-next-line @next/next/no-img-element
