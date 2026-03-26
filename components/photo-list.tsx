@@ -1,44 +1,48 @@
-import { ListObjectsV2Command } from "@aws-sdk/client-s3";
-import { r2 } from "@/lib/r2";
-import { getDownloadUrl } from "@/lib/presigned";
+"use client";
 
-const BUCKET = process.env.R2_BUCKET_NAME!;
+import { useEffect, useState } from "react";
 
 interface Photo {
   key: string;
   url: string;
-  lastModified?: Date;
 }
 
-async function getPhotos(): Promise<Photo[]> {
-  try {
-    const result = await r2.send(
-      new ListObjectsV2Command({ Bucket: BUCKET, Prefix: "photos/" }),
-    );
+interface PhotoListProps {
+  refreshTrigger?: number;
+}
 
-    const objects = result.Contents ?? [];
-    const photos = await Promise.all(
-      objects
-        .filter((obj) => obj.Key)
-        .map(async (obj) => ({
-          key: obj.Key!,
-          url: await getDownloadUrl(obj.Key!),
-          lastModified: obj.LastModified,
-        })),
-    );
+export function PhotoList({ refreshTrigger = 0 }: PhotoListProps) {
+  // null = 로딩 중, [] = 로드 완료(빈 목록), Photo[] = 사진 있음
+  const [photos, setPhotos] = useState<Photo[] | null>(null);
 
-    return photos.sort(
-      (a, b) =>
-        (b.lastModified?.getTime() ?? 0) - (a.lastModified?.getTime() ?? 0),
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch("/api/photos")
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then(({ photos }) => {
+        if (!cancelled) setPhotos(photos ?? []);
+      })
+      .catch((err) => {
+        console.error("[PhotoList] fetch error:", err);
+        if (!cancelled) setPhotos([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshTrigger]);
+
+  if (photos === null) {
+    return (
+      <p className="text-sm text-muted-foreground text-center py-16">
+        불러오는 중...
+      </p>
     );
-  } catch (err) {
-    console.error("[PhotoList] R2 fetch error:", err);
-    return [];
   }
-}
-
-export async function PhotoList() {
-  const photos = await getPhotos();
 
   if (photos.length === 0) {
     return (
